@@ -1,0 +1,8 @@
+output/
+.env
+
+# model stuff
+engine/
+pytorch_model/
+sdxl*
+.sdenv/

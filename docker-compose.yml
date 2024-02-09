@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  webui:
+    container_name: webui-test
+    build: ../run_stable_webui
+    ports:
+      - "5500:80"
+    depends_on:
+      - backend
+    environment:
+      - API_ENDPOINT=http://backend:8600
+    networks:
+      - sd_net
+
+  backend:
+    container_name: backend
+    build: .
+    volumes:
+      # - /mnt/nvm/repos/stable-diffusion-xl-1.0-tensorrt:/workspace/stable-diffusion-xl-1.0-tensorrt
+      - ./engine:/workspace/engine   # engine
+      - ./pytorch_model:/workspace/pytorch_model   # pytorch
+      - ./sdxl-1.0-base:/workspace/sdxl-1.0-base   # base
+      - ./sdxl-1.0-refiner:/workspace/sdxl-1.0-refiner  # refiner
+      - ./src:/workspace/src  # code base
+
+    stdin_open: true  # Keep stdin open
+    tty: true         # Allocate a pseudo-TTY
+    # command: "python3"
+    ports:
+      - 8600:8000
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '2' ]
+              capabilities: [ gpu ]
+    networks:
+      - sd_net
+
+networks:
+  sd_net:
+    driver: bridge
+
+# python3 /workspace/TensorRT/demo/Diffusion/demo_txt2img_xl.py \
+#   "Black bear mom carrying cubs across mountain road, 8k" \
+#   --build-static-batch \
+#   --use-cuda-graph \
+#   --num-warmup-runs 1 \
+#   --width 1024 \
+#   --height 1024 \
+#   --denoising-steps 30 \
+#   --onnx-dir /workspace/stable-diffusion-xl-1.0-tensorrt/sdxl-1.0-base \
+#   --onnx-refiner-dir /workspace/stable-diffusion-xl-1.0-tensorrt/sdxl-1.0-refiner
